@@ -1,43 +1,36 @@
 import express from 'express';
+import session from 'express-session';
 import { engine } from 'express-handlebars';
 
-import adminCategoryRouter from './routes/admin-category.route.js';
-
+// Khởi tạo app trước
 const app = express();
-const PORT = process.env.PORT || 3000;
 
+// Cấu hình View Engine
 app.engine('handlebars', engine());
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 
-app.use('/static', express.static('static'));
-app.use(express.urlencoded({
-  extended: true
+// Cấu hình session
+app.use(session({
+  secret: 'supersecretkey',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: false, // secure: true nếu chạy HTTPS
+    maxAge: 1000 * 60 * 60, // 1 giờ
+  }
 }));
 
-app.get('/', function (req, res) {
-  const data = {
-    name: 'Vincent Nguyen',
-    age: 20,
-    occupation: 'Developer'
-  };
-  res.render('home', data);
+// Middleware xử lý body
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Route test session ✅
+app.get('/', (req, res) => {
+  req.session.visitCount = (req.session.visitCount || 0) + 1;
+  res.send(`You visited this page ${req.session.visitCount} times`);
 });
 
-app.get('/account/signup', function (req, res) {
-  res.render('vwAccount/signup');
-});
-
-app.get('/account/signin', function (req, res) {
-  res.render('vwAccount/signin');
-});
-
-app.get('/products/byCat', function (req, res) {
-  res.render('vwProducts/byCat');
-});
-
-app.use('/admin/categories', adminCategoryRouter);
-
-app.listen(PORT, function () {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Lắng nghe cổng
+const PORT = 3000;
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));

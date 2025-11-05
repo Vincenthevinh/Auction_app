@@ -1,0 +1,10 @@
+{{> layoutHeader title="Verify OTP"}}
+<form method="POST" action="/auth/otp/verify">
+  <div>
+    <label>OTP</label>
+    <input name="otp" required maxlength="6">
+  </div>
+  {{#if error}}<p style="color:red">{{error}}</p>{{/if}}
+  <button type="submit">Verify</button>
+</form>
+{{> layoutFooter}}
