@@ -1,4 +1,4 @@
-{{> layoutHeader title="Verify OTP"}}
+{{> header title="Verify OTP"}}
 <form method="POST" action="/auth/otp/verify">
   <div>
     <label>OTP</label>
@@ -7,4 +7,4 @@
   {{#if error}}<p style="color:red">{{error}}</p>{{/if}}
   <button type="submit">Verify</button>
 </form>
-{{> layoutFooter}}
+{{> footer}}

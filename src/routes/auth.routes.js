@@ -1,19 +1,25 @@
-// src/routes/auth.routes.js
-import express from 'express';
-import passport from 'passport';
-import { showSignup, postSignup, showLogin, postLogin, showOtp, verifyOtp, logout } from '../controllers/auth.controller.js';
-
+import express from "express";
 const router = express.Router();
 
-router.get('/signup', showSignup);
-router.post('/signup', postSignup);
+router.get("/signin", (req, res) => {
+  res.render("auth/signin", {
+    title: "Sign In",
+    layout: "auth"
+  });
+});
 
-router.get('/login', showLogin);
-router.post('/login', postLogin); // passport used inside controller
+router.get("/signup", (req, res) => {
+  res.render("auth/signup", {
+    title: "Sign Up",
+    layout: "auth"
+  });
+});
 
-router.get('/otp', showOtp); // page to enter OTP
-router.post('/otp/verify', verifyOtp);
-
-router.get('/logout', logout);
+router.get("/otp", (req, res) => {
+  res.render("auth/otp", {
+    title: "OTP Verification",
+    layout: "auth"
+  });
+});
 
 export default router;

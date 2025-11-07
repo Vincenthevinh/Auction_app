@@ -1,26 +1,32 @@
-{{> layoutHeader title="Sign Up"}}
-<form method="POST" action="/auth/signup">
-  <div>
-    <label>Username</label>
-    <input name="username" required>
-  </div>
-  <div>
-    <label>Email</label>
-    <input type="email" name="email" required>
-  </div>
-  <div>
-    <label>Fullname</label>
-    <input name="fullname" required>
-  </div>
-  <div>
-    <label>Address</label>
-    <input name="address" required>
-  </div>
-  <div>
-    <label>Password</label>
-    <input type="password" name="password" required>
-  </div>
-  {{#if error}}<p style="color:red">{{error}}</p>{{/if}}
-  <button type="submit">Sign up</button>
-</form>
-{{> layoutFooter}}
+<div class="morph-card">
+    <h3 class="text-center mb-4">Đăng ký</h3>
+
+    {{#if error}}
+    <div class="alert alert-danger p-2">{{error}}</div>
+    {{/if}}
+
+    <form method="POST" action="/auth/signup">
+        <div class="mb-3">
+            <label>Họ tên</label>
+            <input class="form-control" type="text" name="name" placeholder="Nhập họ tên..." required>
+        </div>
+
+        <div class="mb-3">
+            <label>Email</label>
+            <input class="form-control" type="email" name="email" placeholder="Nhập email..." required>
+        </div>
+
+        <div class="mb-3">
+            <label>Mật khẩu</label>
+            <input class="form-control" type="password" name="password" placeholder="Tạo mật khẩu..." required>
+        </div>
+
+        <button class="btn btn-morph w-100 mt-2">Đăng ký</button>
+
+        <div class="text-center mt-3">
+            <a href="/auth/signin" class="text-light text-decoration-underline">
+                Đã có tài khoản? Đăng nhập ngay
+            </a>
+        </div>
+    </form>
+</div>

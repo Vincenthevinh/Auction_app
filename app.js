@@ -1,36 +1,41 @@
-import express from 'express';
-import session from 'express-session';
-import { engine } from 'express-handlebars';
+import express from "express";
+import { engine } from "express-handlebars";
+import path from "path";
+import dotenv from "dotenv";
+import session from "express-session";
+import passport from "./src/utils/passport.js";
 
-// Khởi tạo app trước
+dotenv.config();
 const app = express();
 
-// Cấu hình View Engine
-app.engine('handlebars', engine());
-app.set('view engine', 'handlebars');
-app.set('views', './views');
-
-// Cấu hình session
-app.use(session({
-  secret: 'supersecretkey',
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    secure: false, // secure: true nếu chạy HTTPS
-    maxAge: 1000 * 60 * 60, // 1 giờ
-  }
+app.engine("handlebars", engine({
+    defaultLayout: "main",
+    layoutsDir: "./src/views/layouts",
+    partialsDir: "./src/views/partials"
 }));
 
-// Middleware xử lý body
+app.set("view engine", "handlebars");
+app.set("views", "./src/views");
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.static("./src/public"));
 
-// Route test session ✅
-app.get('/', (req, res) => {
-  req.session.visitCount = (req.session.visitCount || 0) + 1;
-  res.send(`You visited this page ${req.session.visitCount} times`);
-});
+// Session + Passport
+app.use(session({
+    secret: process.env.SESSION_SECRET || "secret",
+    resave: false,
+    saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Lắng nghe cổng
-const PORT = 3000;
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+// Routes
+import authRoutes from "./src/routes/auth.routes.js";
+import homeRoutes from "./src/routes/home.routes.js";
+
+app.use("/", homeRoutes);
+app.use("/auth", authRoutes);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server is running at http://localhost:${PORT}`));
