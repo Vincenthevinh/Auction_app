@@ -32,8 +32,8 @@ npm-debug.log*
 Thumbs.db
 
 # Uploads (database files)
-backend/public/uploads/*
-!backend/public/uploads/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
 
 # Production
-/backend/.env.production
+/.env.production
