@@ -33,6 +33,14 @@ export const calculateTimeRemaining = (endTime) => {
   return `${seconds}s`;
 };
 
+export const validateBidAmount = (currentPrice, minIncrement, bidAmount) => {
+  const minBidAmount = currentPrice + minIncrement;
+  if (bidAmount < minBidAmount) {
+    return `Bid must be at least ${minBidAmount}`;
+  }
+  return null;
+};
+
 export const isProductEnding = (endTime) => {
   const now = new Date();
   const end = new Date(endTime);
