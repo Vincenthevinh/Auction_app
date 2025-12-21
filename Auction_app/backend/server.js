@@ -6,10 +6,10 @@ const connectDB = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
-const auctionRoutes = require('./routes/auction');
-const categoryRoutes = require('./routes/categories');
+const authRoutes = require('./routes/authRoutes');
+const productRoutes = require('./routes/productsRoutes');
+const auctionRoutes = require('./routes/auctionRoutes');
+const categoryRoutes = require('./routes/categoriesRoutes');
 
 const app = express();
 
