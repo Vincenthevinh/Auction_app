@@ -29,6 +29,10 @@
   white-space: nowrap;
 }
 
+.logo:hover {
+  opacity: 0.8;
+}
+
 .search-box {
   flex: 1;
   max-width: 400px;
@@ -43,6 +47,11 @@
   border: none;
   background: none;
   padding: 12px 16px;
+  font-size: 14px;
+}
+
+.search-box input:focus {
+  outline: none;
 }
 
 .search-box button {
@@ -51,6 +60,14 @@
   padding: 0 16px;
   cursor: pointer;
   color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.search-box button:hover {
+  color: var(--primary);
 }
 
 .header-actions {
@@ -67,12 +84,17 @@
   text-decoration: none;
   font-weight: 500;
   transition: color var(--transition);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
 }
 
 .nav-link:hover {
   color: var(--primary);
 }
 
+/* User Menu Dropdown */
 .user-menu {
   position: relative;
 }
@@ -86,45 +108,67 @@
   background-color: var(--gray-200);
   border-radius: 50%;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 
+.user-avatar:hover {
+  background-color: var(--gray-300);
+}
+
+/* Dropdown Menu - Key Fix */
 .dropdown-menu {
-  display: none;
   position: absolute;
   top: 100%;
   right: 0;
   background: white;
   border-radius: var(--border-radius);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 180px;
+  min-width: 200px;
   margin-top: 8px;
+  z-index: 1000;
+  animation: slideDown 0.2s ease-out;
 }
 
-.user-menu:hover .dropdown-menu {
-  display: block;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.dropdown-menu p, .dropdown-menu a {
+.dropdown-menu p,
+.dropdown-menu a {
   display: block;
-  padding: 10px 16px;
+  padding: 12px 16px;
   color: var(--dark);
   text-decoration: none;
   transition: background-color var(--transition);
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
 }
 
 .dropdown-menu a:hover {
-  background-color: var(--gray-100);
+  background-color: var(--light);
+  color: var(--primary);
 }
 
 .user-name {
   font-weight: 600;
   border-bottom: 1px solid var(--gray-200);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .logout-btn {
   width: 100%;
-  padding: 10px 16px;
+  padding: 12px 16px;
   background: none;
   border: none;
   cursor: pointer;
@@ -133,6 +177,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: all var(--transition);
+  border-top: 1px solid var(--gray-200);
+  margin-top: 4px;
+}
+
+.logout-btn:hover {
+  background-color: #fee;
 }
 
 .auth-buttons {
@@ -164,6 +215,7 @@
   font-weight: 500;
   padding: 8px 12px;
   transition: color var(--transition);
+  cursor: pointer;
 }
 
 .category-link:hover {
@@ -179,6 +231,8 @@
   border-radius: var(--border-radius);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 200px;
+  margin-top: 4px;
+  z-index: 1000;
 }
 
 .category-item:hover .submenu {
@@ -191,9 +245,58 @@
   color: var(--dark);
   text-decoration: none;
   transition: all var(--transition);
+  font-weight: 500;
 }
 
 .submenu a:hover {
-  background-color: var(--gray-100);
+  background-color: var(--light);
   color: var(--primary);
+  padding-left: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header-top-content {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .search-box {
+    max-width: 100%;
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .logo {
+    font-size: 20px;
+  }
+
+  .dropdown-menu {
+    right: -10px;
+  }
+
+  .category-menu {
+    gap: 15px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-actions {
+    gap: 10px;
+  }
+
+  .nav-link span {
+    display: none;
+  }
+
+  .auth-buttons {
+    gap: 5px;
+    flex-direction: column;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 }
