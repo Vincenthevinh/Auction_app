@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { User, Settings, Award, ShoppingBag } from 'lucide-react';
+import { fetchCurrentUser } from '../redux/slices/authSlice';
+import { fetchWatchlist } from '../redux/slices/auctionSlice';
+import { User, Settings, Award, ShoppingBag, Heart } from 'lucide-react';
 import '../styles/Profile.css';
+import { WatchlistTab } from '../components/WatchlistTab';
+import { SellingTab } from '../components/SellingTab';
+import { SalesTab } from '../components/SalesTab';
 
 export default function Profile() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector(state => state.auth);
+  const { watchlist } = useSelector(state => state.auction);
   const [activeTab, setActiveTab] = useState('info');
   const [formData, setFormData] = useState({
     name: '',
@@ -17,11 +24,23 @@ export default function Profile() {
     country: ''
   });
   const [loading, setLoading] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
-    } else if (user) {
+      return;
+    }
+
+    // Fetch current user data
+    if (!user) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [isAuthenticated, user, dispatch, navigate]);
+
+  // Update form when user data loads
+  useEffect(() => {
+    if (user) {
       setFormData({
         name: user.name || '',
         phone: user.phone || '',
@@ -30,16 +49,28 @@ export default function Profile() {
         country: user.country || ''
       });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [user]);
+
+  // Load watchlist when tab changes
+  useEffect(() => {
+    if (activeTab === 'watchlist' && isAuthenticated) {
+      dispatch(fetchWatchlist(1));
+    }
+  }, [activeTab, dispatch, isAuthenticated]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setSaveMessage('');
+
     try {
       await api.put('/auth/me', formData);
-      alert('Profile updated successfully');
+      setSaveMessage('✅ Profile updated successfully');
+      dispatch(fetchCurrentUser());
+      
+      setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
-      alert('Failed to update profile: ' + error.message);
+      setSaveMessage('❌ Failed to update profile: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -71,7 +102,12 @@ export default function Profile() {
               {user.role === 'seller' && (
                 <span className="badge badge-seller">Seller</span>
               )}
-              <span className="badge badge-member">Member since {new Date(user.createdAt).getFullYear()}</span>
+              {user.role === 'admin' && (
+                <span className="badge badge-admin">Admin</span>
+              )}
+              <span className="badge badge-member">
+                Member since {new Date(user.createdAt).getFullYear()}
+              </span>
             </div>
           </div>
         </div>
@@ -89,7 +125,7 @@ export default function Profile() {
                 className={`nav-item ${activeTab === 'watchlist' ? 'active' : ''}`}
                 onClick={() => setActiveTab('watchlist')}
               >
-                <Settings size={18} /> Watchlist
+                <Heart size={18} /> Watchlist
               </button>
               {user.role === 'seller' && (
                 <>
@@ -115,6 +151,13 @@ export default function Profile() {
             {activeTab === 'info' && (
               <div className="profile-card">
                 <h2>Personal Information</h2>
+                
+                {saveMessage && (
+                  <div className={`message ${saveMessage.includes('✅') ? 'success' : 'error'}`}>
+                    {saveMessage}
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="profile-form">
                   <div className="form-group">
                     <label>Full Name</label>
@@ -123,6 +166,16 @@ export default function Profile() {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
+                      placeholder="Enter your name"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Email (Read-only)</label>
+                    <input
+                      type="email"
+                      value={user.email}
+                      disabled
                     />
                   </div>
 
@@ -133,6 +186,7 @@ export default function Profile() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
+                      placeholder="Enter your phone"
                     />
                   </div>
 
@@ -143,6 +197,7 @@ export default function Profile() {
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
+                      placeholder="Enter your address"
                     />
                   </div>
 
@@ -154,6 +209,7 @@ export default function Profile() {
                         name="city"
                         value={formData.city}
                         onChange={handleChange}
+                        placeholder="Enter your city"
                       />
                     </div>
                     <div className="form-group">
@@ -163,6 +219,7 @@ export default function Profile() {
                         name="country"
                         value={formData.country}
                         onChange={handleChange}
+                        placeholder="Enter your country"
                       />
                     </div>
                   </div>
@@ -174,21 +231,21 @@ export default function Profile() {
 
                 <div className="stats-grid">
                   <div className="stat-card">
-                    <div className="stat-value">{user.totalBids}</div>
+                    <div className="stat-value">{user.totalBids || 0}</div>
                     <div className="stat-label">Total Bids</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-value">{user.totalWins}</div>
+                    <div className="stat-value">{user.totalWins || 0}</div>
                     <div className="stat-label">Auctions Won</div>
                   </div>
                   {user.role === 'seller' && (
                     <>
                       <div className="stat-card">
-                        <div className="stat-value">{user.totalSold}</div>
+                        <div className="stat-value">{user.totalSold || 0}</div>
                         <div className="stat-label">Items Sold</div>
                       </div>
                       <div className="stat-card">
-                        <div className="stat-value">⭐ {user.sellerRating}</div>
+                        <div className="stat-value">⭐ {user.sellerRating || 0}</div>
                         <div className="stat-label">Seller Rating</div>
                       </div>
                     </>
@@ -199,7 +256,7 @@ export default function Profile() {
 
             {/* Watchlist Tab */}
             {activeTab === 'watchlist' && (
-              <WatchlistTab />
+              <WatchlistTab watchlist={watchlist} />
             )}
 
             {/* Selling Tab */}

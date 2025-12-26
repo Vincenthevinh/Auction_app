@@ -10,6 +10,7 @@ import SellerInfo from '../components/SellerInfo';
 import { formatPrice, formatDate, calculateTimeRemaining, validateBidAmount } from '../utils/helpers';
 import { Heart, Share2, MapPin, Truck, AlertCircle } from 'lucide-react';
 import '../styles/ProductDetail.css';
+import { isProductEnding } from '../utils/helpers';
 
 export default function ProductDetail() {
   const { id } = useParams();

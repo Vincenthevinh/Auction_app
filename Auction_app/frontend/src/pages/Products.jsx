@@ -14,13 +14,29 @@ export default function Products() {
   const { items: products, pagination, loading } = useSelector(state => state.products);
 
   const [filters, setFilters] = useState({
-    page: parseInt(searchParams.get('page')) || 1,
+    page: 1,
     limit: 12,
-    category: searchParams.get('category') || '',
-    search: searchParams.get('search') || '',
-    sort: searchParams.get('sort') || ''
+    category: '',
+    search: '',
+    sort: ''
   });
 
+  useEffect(() => {
+    const newCategory = searchParams.get('category') || '';
+    const newSearch = searchParams.get('search') || '';
+    const newSort = searchParams.get('sort') || '';
+    const newPage = parseInt(searchParams.get('page')) || 1;
+    
+    setFilters(prev => ({
+        ...prev,
+        page: newPage,
+        category: newCategory,
+        search: newSearch,
+        sort: newSort,
+    }));
+  }, [searchParams]);
+
+  
   useEffect(() => {
     dispatch(fetchProducts(filters));
   }, [filters, dispatch]);

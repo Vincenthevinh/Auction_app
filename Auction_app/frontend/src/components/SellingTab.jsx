@@ -14,9 +14,10 @@ export function SellingTab() {
   const fetchSellingProducts = async () => {
     try {
       const response = await api.get('/products/my-products');
-      setProducts(response.data);
+      setProducts(response.data || []);
     } catch (error) {
       console.error('Failed to fetch products:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -28,10 +29,14 @@ export function SellingTab() {
         await api.delete(`/products/${productId}`);
         fetchSellingProducts();
       } catch (error) {
-        alert('Failed to delete product');
+        alert('Failed to delete product: ' + error.message);
       }
     }
   };
+
+  if (loading) {
+    return <div className="profile-card loading">Loading...</div>;
+  }
 
   return (
     <div className="profile-card">
@@ -42,9 +47,7 @@ export function SellingTab() {
         </Link>
       </div>
 
-      {loading ? (
-        <div>Loading...</div>
-      ) : products.length > 0 ? (
+      {products && products.length > 0 ? (
         <table className="products-table">
           <thead>
             <tr>
@@ -59,14 +62,26 @@ export function SellingTab() {
             {products.map(product => (
               <tr key={product._id}>
                 <td>{product.title}</td>
-                <td>₫{product.currentPrice.toLocaleString()}</td>
-                <td>{product.bidCount}</td>
-                <td><span className={`badge badge-${product.status}`}>{product.status}</span></td>
+                <td>₫{product.currentPrice?.toLocaleString() || 0}</td>
+                <td>{product.bidCount || 0}</td>
                 <td>
-                  <Link to={`/seller/edit/${product._id}`} className="btn-icon">
+                  <span className={`badge badge-${product.status}`}>
+                    {product.status}
+                  </span>
+                </td>
+                <td>
+                  <Link
+                    to={`/seller/edit/${product._id}`}
+                    className="btn-icon"
+                    title="Edit"
+                  >
                     <Edit size={16} />
                   </Link>
-                  <button onClick={() => handleDelete(product._id)} className="btn-icon btn-danger">
+                  <button
+                    onClick={() => handleDelete(product._id)}
+                    className="btn-icon btn-danger"
+                    title="Delete"
+                  >
                     <Trash2 size={16} />
                   </button>
                 </td>
@@ -81,35 +96,6 @@ export function SellingTab() {
             Start Your First Auction
           </Link>
         </div>
-      )}
-    </div>
-  );
-}
-
-// ===== frontend/src/components/SalesTab.jsx =====
-export function SalesTab() {
-  const [sales, setSales] = useState([]);
-
-  return (
-    <div className="profile-card">
-      <h2>Sales History</h2>
-      {sales.length > 0 ? (
-        <table className="sales-table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Winner</th>
-              <th>Sale Price</th>
-              <th>Date</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Add sales data here */}
-          </tbody>
-        </table>
-      ) : (
-        <p>No sales yet</p>
       )}
     </div>
   );

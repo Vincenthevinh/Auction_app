@@ -1,24 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout, fetchCurrentUser } from '../redux/slices/authSlice';
+import { logout } from '../redux/slices/authSlice';
 import { Heart, Search, User, LogOut, Home } from 'lucide-react';
+import {CategoryMenu} from '../components/CategoryMenu';
+
 import '../styles/Header.css';
 
 export default function Header() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, isAuthenticated, token } = useSelector(state => state.auth);
+  const { user, isAuthenticated, isRestoringAuth } = useSelector(state => state.auth);
   const [searchValue, setSearchValue] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
+  // Close dropdown when clicking outside
   useEffect(() => {
-    if (isAuthenticated && token && !user) {
-      dispatch(fetchCurrentUser());
+  function handleClickOutside(event) {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target)
+    ) {
+      setShowDropdown(false);
     }
-  }, [isAuthenticated, token, user, dispatch]);
+  }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   const handleLogout = () => {
     dispatch(logout());
+    setShowDropdown(false);
     navigate('/');
   };
 
@@ -52,31 +67,62 @@ export default function Header() {
             </form>
 
             <div className="header-actions">
-              {isAuthenticated ? (
+              {isRestoringAuth ? (
+                <div className="auth-loading">Loading...</div>
+              ) : isAuthenticated ? (
                 <>
                   <Link to="/watchlist" className="nav-link">
                     <Heart size={20} />
                     <span>Watchlist</span>
                   </Link>
-                  <div className="user-menu">
-                    <div className="user-avatar">
+                  <div className="user-menu" ref={dropdownRef}>
+                    <div
+                      className="user-avatar"
+                      onClick={() => setShowDropdown(!showDropdown)}
+                      title="Click to toggle menu"
+                    >
                       <User size={20} />
                     </div>
-                    <div className="dropdown-menu">
-                      <p className="user-name">{user?.name}</p>
-                      <Link to="/profile">My Profile</Link>
-                      {user?.role === 'seller' && <Link to="/seller/products">Selling</Link>}
-                      {user?.role === 'admin' && <Link to="/admin">Admin Panel</Link>}
-                      <button onClick={handleLogout} className="logout-btn">
-                        <LogOut size={16} /> Logout
-                      </button>
-                    </div>
+                    {showDropdown && (
+                      <div className="dropdown-menu">
+                        <p className="user-name">{user?.name || 'User'}</p>
+                        <Link
+                          to="/profile"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          My Profile
+                        </Link>
+                        {user?.role === 'seller' && (
+                          <Link
+                            to="/seller/products"
+                            onClick={() => setShowDropdown(false)}
+                          >
+                            Selling
+                          </Link>
+                        )}
+                        {user?.role === 'admin' && (
+                          <Link
+                            to="/admin"
+                            onClick={() => setShowDropdown(false)}
+                          >
+                            Admin Panel
+                          </Link>
+                        )}
+                        <button onClick={handleLogout} className="logout-btn">
+                          <LogOut size={16} /> Logout
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
                 <div className="auth-buttons">
-                  <Link to="/login" className="btn btn-secondary">Login</Link>
-                  <Link to="/register" className="btn btn-primary">Sign Up</Link>
+                  <Link to="/login" className="btn btn-secondary">
+                    Login
+                  </Link>
+                  <Link to="/register" className="btn btn-primary">
+                    Sign Up
+                  </Link>
                 </div>
               )}
             </div>
@@ -89,6 +135,7 @@ export default function Header() {
           <CategoryMenu />
         </div>
       </nav>
+
     </header>
   );
 }

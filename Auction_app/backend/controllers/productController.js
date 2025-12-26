@@ -4,15 +4,17 @@ const Category = require('../models/Category');
 // Get all products with pagination, filtering, sorting
 exports.getProducts = async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, category, search, sort } = req.query;
+    const { page = 1, limit = 12, category, subcategory, search, sort } = req.query;
     const skip = (page - 1) * limit;
 
     let query = { status: 'active' };
 
     // Filter by category
-    if (category) {
+    if (subcategory) {
+      query.subcategory = subcategory;
+    } else if (category) {
       query.category = category;
-    }
+}
 
     // Full-text search
     if (search) {
@@ -77,7 +79,7 @@ exports.getProductById = async (req, res, next) => {
 // Create product
 exports.createProduct = async (req, res, next) => {
   try {
-    const { title, description, category, startPrice, minIncrement, buyNowPrice, condition, startTime, endTime, location, shippingCost, shippingMethod } = req.body;
+    const { title, description, category, subcategory, startPrice, minIncrement, buyNowPrice, condition, startTime, endTime, location, shippingCost, shippingMethod } = req.body;
 
     const images = req.files ? req.files.map(f => `/uploads/${f.filename}`) : [];
 
@@ -89,6 +91,7 @@ exports.createProduct = async (req, res, next) => {
       title,
       description,
       category,
+      subcategory,
       seller: req.user.userId,
       images,
       thumbnail: images[0],
@@ -107,6 +110,7 @@ exports.createProduct = async (req, res, next) => {
 
     await product.save();
     await product.populate('category', 'name');
+    await product.populate('subcategory', 'name');
     await product.populate('seller', 'name shopName');
 
     res.status(201).json(product);

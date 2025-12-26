@@ -4,6 +4,7 @@ const productSchema = new mongoose.Schema({
   slug: { type: String, unique: true },
   description: String,
   category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+  subcategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
   seller: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   
   // Images

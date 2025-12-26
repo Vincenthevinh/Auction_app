@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { restoreAuthState } from './redux/slices/authSlice';
 import Header from './layout/Header';
 import Footer from './layout/Footer';
 import Notification from './components/Notification';
@@ -18,7 +20,11 @@ import NotFound from './pages/NotFound';
 import './App.css';
 
 function PrivateRoute({ children, requiredRole = null }) {
-  const { isAuthenticated, user } = useSelector(state => state.auth);
+  const { isAuthenticated, user, isRestoringAuth} = useSelector(state => state.auth);
+
+  if (isRestoringAuth) {
+    return <div className="loading">Loading...</div>;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
@@ -32,51 +38,66 @@ function PrivateRoute({ children, requiredRole = null }) {
 }
 
 export default function App() {
+  const dispatch = useDispatch();
+  const { isRestoringAuth } = useSelector(state => state.auth);
+
+  // Restore auth state on app load
+  useEffect(() => {
+    dispatch(restoreAuthState());
+  }, [dispatch]);
+
   return (
     <Router>
       <div className="app">
-        <Header />
+        <Header /> {/* <-- Luôn nằm trong <Router> */}
         <main className="app-main">
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/products/:id" element={<ProductDetail />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/verify-otp/:userId" element={<VerifyOTP />} />
-            <Route path="/login" element={<Login />} />
+          {isRestoringAuth ? (
+            // LOGIC LOADING BÂY GIỜ NẰM BÊN TRONG <Router>
+            <div className="loading" style={{ minHeight: '400px' }}>
+              Restoring your session...
+            </div>
+          ) : (
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/verify-otp/:userId" element={<VerifyOTP />} />
+              <Route path="/login" element={<Login />} />
 
-            {/* Private Routes */}
-            <Route
-              path="/profile"
-              element={
-                <PrivateRoute>
-                  <Profile />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/watchlist"
-              element={
-                <PrivateRoute>
-                  <Profile />
-                </PrivateRoute>
-              }
-            />
+              {/* Private Routes */}
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <Profile />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/watchlist"
+                element={
+                  <PrivateRoute>
+                    <Profile />
+                  </PrivateRoute>
+                }
+              />
 
-            {/* Seller Routes */}
-            <Route
-              path="/seller/create-product"
-              element={
-                <PrivateRoute requiredRole="seller">
-                  <CreateProduct />
-                </PrivateRoute>
-              }
-            />
+              {/* Seller Routes */}
+              <Route
+                path="/seller/create-product"
+                element={
+                  <PrivateRoute requiredRole="seller">
+                    <CreateProduct />
+                  </PrivateRoute>
+                }
+              />
 
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          )}
         </main>
         <Footer />
         <Notification />

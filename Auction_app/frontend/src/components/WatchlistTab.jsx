@@ -1,26 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchWatchlist, removeFromWatchlist } from '../redux/slices/auctionSlice';
 import ProductCard from './ProductCard';
 import { Trash2, Heart } from 'lucide-react';
 import '../styles/WatchlistTab.css';
 
-export function WatchlistTab() {
+export function WatchlistTab({ watchlist }) {
   const dispatch = useDispatch();
-  const { watchlist } = useSelector(state => state.auction);
 
-  useEffect(() => {
-    dispatch(fetchWatchlist(1));
-  }, [dispatch]);
+  if (!watchlist || !watchlist.items) {
+    return (
+      <div className="profile-card">
+        <h2>My Watchlist</h2>
+        <div className="empty-state">
+          <Heart size={48} />
+          <p>Your watchlist is empty</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { items = [] } = watchlist;
 
   const handleRemove = async (productId) => {
     if (window.confirm('Remove from watchlist?')) {
-      await dispatch(removeFromWatchlist(productId));
-      dispatch(fetchWatchlist(1));
+      try {
+        await dispatch(removeFromWatchlist(productId));
+        dispatch(fetchWatchlist(1));
+      } catch (error) {
+        console.error('Error removing from watchlist:', error);
+      }
     }
   };
 
-  if (!watchlist.items || watchlist.items.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="profile-card">
         <h2>My Watchlist</h2>
@@ -34,14 +47,15 @@ export function WatchlistTab() {
 
   return (
     <div className="profile-card">
-      <h2>My Watchlist ({watchlist.items.length})</h2>
+      <h2>My Watchlist ({items.length})</h2>
       <div className="watchlist-grid">
-        {watchlist.items.map(product => (
+        {items.map(product => (
           <div key={product._id} className="watchlist-item">
             <ProductCard product={product} />
             <button
               onClick={() => handleRemove(product._id)}
               className="btn-remove-watchlist"
+              title="Remove from watchlist"
             >
               <Trash2 size={18} />
             </button>

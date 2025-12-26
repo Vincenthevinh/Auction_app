@@ -76,9 +76,9 @@ const seedDatabase = async () => {
         order: 3
       }
     ]);
-
+  
     // Create subcategories
-    await Category.create([
+    const subCategories = await Category.create([
       {
         name: 'Phones',
         parentId: parentCategories[0]._id,
@@ -104,6 +104,10 @@ const seedDatabase = async () => {
         order: 2
       }
     ]);
+    const phones = subCategories.find(c => c.name === 'Phones');
+    const laptops = subCategories.find(c => c.name === 'Laptops');
+    const men = subCategories.find(c => c.name === 'Men');
+    const women = subCategories.find(c => c.name === 'Women');
 
     console.log('✅ Categories created');
 
@@ -114,6 +118,7 @@ const seedDatabase = async () => {
         title: 'iPhone 13 Pro Max - 256GB - Trắng',
         description: 'iPhone 13 Pro Max 256GB màu trắng, còn như mới, full box',
         category: parentCategories[0]._id,
+        subcategory: phones._id,
         seller: users[1]._id,
         images: [
           'https://via.placeholder.com/500x500?text=iPhone+1',
@@ -140,6 +145,7 @@ const seedDatabase = async () => {
         title: 'MacBook Pro 14" M1 - 512GB',
         description: 'MacBook Pro 14" M1 Pro, 512GB, 16GB RAM, Space Gray',
         category: parentCategories[0]._id,
+        subcategory: laptops._id,
         seller: users[1]._id,
         images: [
           'https://via.placeholder.com/500x500?text=MacBook+1'
@@ -162,6 +168,7 @@ const seedDatabase = async () => {
         title: 'Áo Sơ Mi Linen Nam Cao Cấp',
         description: 'Áo sơ mi linen 100% chính hãng, size M-L, màu xanh navy',
         category: parentCategories[1]._id,
+        subcategory: men._id,
         seller: users[1]._id,
         images: [
           'https://via.placeholder.com/500x500?text=Shirt+1'
@@ -204,6 +211,7 @@ const seedDatabase = async () => {
         title: 'iPad Air 5 - 64GB - Xanh Dương',
         description: 'iPad Air 5 64GB WiFi, màu xanh dương, còn bảo hành',
         category: parentCategories[0]._id,
+        subcategory: phones._id,
         seller: users[1]._id,
         images: [
           'https://via.placeholder.com/500x500?text=iPad+1'
