@@ -3,15 +3,21 @@ import api from '../../services/api';
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async ({ page = 1, limit = 12, category = '', search = '', sort = '' }) => {
-    const params = { page, limit };
-    if (category) params.category = category;
-    if (search) params.search = search;
-    if (sort) params.sort = sort;
-    const response = await api.get('/products', { params });
+  async (filters) => {
+    const params = new URLSearchParams();
+    
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.subcategory) params.append('subcategory', filters.subcategory);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.sort) params.append('sort', filters.sort);
+
+    const response = await api.get(`/products?${params.toString()}`);
     return response.data;
   }
 );
+
 
 export const fetchProductDetail = createAsyncThunk(
   'products/fetchProductDetail',

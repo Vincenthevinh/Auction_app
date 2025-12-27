@@ -7,6 +7,7 @@ const router = express.Router();
 // Bidding
 router.post('/:productId/bid', authMiddleware, auctionController.placeBid);
 router.get('/:productId/bids', auctionController.getBidHistory);
+router.post('/:productId/auto-bid', authMiddleware, auctionController.placeAutoBid);
 
 // Watchlist
 router.post('/:productId/watchlist', authMiddleware, auctionController.addToWatchlist);

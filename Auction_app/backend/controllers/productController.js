@@ -4,17 +4,40 @@ const Category = require('../models/Category');
 // Get all products with pagination, filtering, sorting
 exports.getProducts = async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, category, subcategory, search, sort } = req.query;
+    const { 
+      page = 1, 
+      limit = 12, 
+      category, 
+      search, 
+      sort 
+    } = req.query;
+    
     const skip = (page - 1) * limit;
 
     let query = { status: 'active' };
 
     // Filter by category
-    if (subcategory) {
-      query.subcategory = subcategory;
-    } else if (category) {
-      query.category = category;
-}
+    if (category) {
+      // Check if this is a parent or child category
+      const cat = await Category.findById(category);
+      
+      if (cat) {
+        if (cat.level === 0) {
+          // Parent category - find all children
+          const childCategories = await Category.find({ parentId: cat._id });
+          const childIds = childCategories.map(c => c._id);
+          
+          // Match products in parent OR any child category
+          query.$or = [
+            { category: cat._id },
+            { subcategory: { $in: childIds } }
+          ];
+        } else {
+          // Child category - match subcategory
+          query.subcategory = category;
+        }
+      }
+    }
 
     // Full-text search
     if (search) {
@@ -22,6 +45,14 @@ exports.getProducts = async (req, res, next) => {
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } }
       ];
+      
+      // If category filter exists, combine with search
+      if (query.$or && category) {
+        query.$and = [
+          { $or: query.$or },
+          query.$or // category filter
+        ];
+      }
     }
 
     // Sorting
@@ -32,9 +63,13 @@ exports.getProducts = async (req, res, next) => {
     if (sort === 'bids') sortObj = { bidCount: -1 };
     if (sort === 'ending-soon') sortObj = { endTime: 1 };
 
+    // Count total matching documents
     const total = await Product.countDocuments(query);
+    
+    // Fetch products
     const products = await Product.find(query)
       .populate('category', 'name')
+      .populate('subcategory', 'name')
       .populate('seller', 'name shopName sellerRating')
       .skip(skip)
       .limit(parseInt(limit))
@@ -50,6 +85,7 @@ exports.getProducts = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error('Get products error:', error);
     next(error);
   }
 };
@@ -59,6 +95,7 @@ exports.getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate('category', 'name')
+      .populate('subcategory', 'name')
       .populate('seller', '-password')
       .populate('winnerId', 'name email');
 
@@ -79,7 +116,21 @@ exports.getProductById = async (req, res, next) => {
 // Create product
 exports.createProduct = async (req, res, next) => {
   try {
-    const { title, description, category, subcategory, startPrice, minIncrement, buyNowPrice, condition, startTime, endTime, location, shippingCost, shippingMethod } = req.body;
+    const { 
+      title, 
+      description, 
+      category, 
+      subcategory, 
+      startPrice, 
+      minIncrement, 
+      buyNowPrice, 
+      condition, 
+      startTime, 
+      endTime, 
+      location, 
+      shippingCost, 
+      shippingMethod 
+    } = req.body;
 
     const images = req.files ? req.files.map(f => `/uploads/${f.filename}`) : [];
 
@@ -91,7 +142,7 @@ exports.createProduct = async (req, res, next) => {
       title,
       description,
       category,
-      subcategory,
+      subcategory: subcategory || null,
       seller: req.user.userId,
       images,
       thumbnail: images[0],
@@ -110,7 +161,9 @@ exports.createProduct = async (req, res, next) => {
 
     await product.save();
     await product.populate('category', 'name');
-    await product.populate('subcategory', 'name');
+    if (product.subcategory) {
+      await product.populate('subcategory', 'name');
+    }
     await product.populate('seller', 'name shopName');
 
     res.status(201).json(product);
@@ -216,6 +269,7 @@ exports.getSellerProducts = async (req, res, next) => {
   try {
     const products = await Product.find({ seller: req.user.userId })
       .populate('category', 'name')
+      .populate('subcategory', 'name')
       .sort({ createdAt: -1 });
 
     res.json(products);

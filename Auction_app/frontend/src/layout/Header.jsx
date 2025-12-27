@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/slices/authSlice';
 import { Heart, Search, User, LogOut, Home } from 'lucide-react';
 import {CategoryMenu} from '../components/CategoryMenu';
-
+import {NotificationBell} from '../components/NotificationBell';
 import '../styles/Header.css';
 
 export default function Header() {
@@ -71,6 +71,7 @@ export default function Header() {
                 <div className="auth-loading">Loading...</div>
               ) : isAuthenticated ? (
                 <>
+                  <NotificationBell />
                   <Link to="/watchlist" className="nav-link">
                     <Heart size={20} />
                     <span>Watchlist</span>

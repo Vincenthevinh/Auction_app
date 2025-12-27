@@ -10,11 +10,13 @@ const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productsRoutes');
 const auctionRoutes = require('./routes/auctionRoutes');
 const categoryRoutes = require('./routes/categoriesRoutes');
-
+const notificationRoutes = require('./routes/notificationRoutes');
+const cronService = require('./services/cronService');
 const app = express();
 
 // Connect to MongoDB
 connectDB();
+cronService.start();
 
 // Middleware
 app.use(cors({
@@ -30,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/auction', auctionRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

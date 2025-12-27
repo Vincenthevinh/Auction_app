@@ -11,6 +11,7 @@ import { formatPrice, formatDate, calculateTimeRemaining, validateBidAmount } fr
 import { Heart, Share2, MapPin, Truck, AlertCircle } from 'lucide-react';
 import '../styles/ProductDetail.css';
 import { isProductEnding } from '../utils/helpers';
+import AutoBidModal from '../components/AutoBidModal';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -23,6 +24,7 @@ export default function ProductDetail() {
   const [bidAmount, setBidAmount] = useState('');
   const [biddingLoading, setBiddingLoading] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
+  const [showAutoBidModal, setShowAutoBidModal] = useState(false);
 
   useEffect(() => {
     dispatch(fetchProductDetail(id));
@@ -201,6 +203,13 @@ export default function ProductDetail() {
                 >
                   {biddingLoading ? 'Placing Bid...' : 'Place Bid'}
                 </button>
+                <button
+                  onClick={() => setShowAutoBidModal(true)}
+                  className="btn btn-secondary btn-block"
+                  style={{ marginTop: '10px' }}
+                >
+                  🤖 Activate Auto-Bid
+                </button>
               </form>
 
               {product.buyNowPrice && (
@@ -246,5 +255,14 @@ export default function ProductDetail() {
         </div>
       </div>
     </div>
-  );
-}
+  )}
+{showAutoBidModal && (
+      <AutoBidModal
+        product={product}
+        onClose={() => setShowAutoBidModal(false)}
+        onSuccess={() => {
+          dispatch(fetchProductDetail(id));
+          dispatch(fetchBidHistory(id));
+        }}
+      />
+    )}

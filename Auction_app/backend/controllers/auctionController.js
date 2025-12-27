@@ -70,3 +70,19 @@ exports.getWatchlist = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.placeAutoBid = async (req, res, next) => {
+  try {
+    const { maxAmount } = req.body;
+    const result = await auctionService.placeBid(
+      req.params.productId,
+      req.user.userId,
+      parseFloat(req.body.amount),
+      true, 
+      parseFloat(maxAmount)
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};

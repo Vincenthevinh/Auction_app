@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { ChevronDown } from 'lucide-react';
+import '../styles/CategoryMenu.css';
 
 export function CategoryMenu() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [openCategoryId, setOpenCategoryId] = useState(null);
   const menuRef = useRef(null);
 
   useEffect(() => {
-    api.get('/categories')
-      .then(res => setCategories(res.data))
-      .catch(err => console.error(err));
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -25,50 +25,69 @@ export function CategoryMenu() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const handleParentClick = (e, cat) => {
-    e.stopPropagation();
-
-    if (cat.children?.length > 0) {
-      e.preventDefault();
-      setOpenCategoryId(prev =>
-        prev === cat._id ? null : cat._id
-      );
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
     }
   };
 
-  const handleSubClick = () => {
+  const handleParentClick = (e, category) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // If has children, toggle dropdown
+    if (category.children && category.children.length > 0) {
+      setOpenCategoryId(prev => prev === category._id ? null : category._id);
+    } else {
+      // If no children, navigate directly
+      navigate(`/products?category=${category._id}`);
+      setOpenCategoryId(null);
+    }
+  };
+
+  const handleSubCategoryClick = (e, subcategory) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Navigate to products with subcategory filter
+    navigate(`/products?category=${subcategory._id}`);
     setOpenCategoryId(null);
   };
 
   return (
     <div className="category-menu" ref={menuRef}>
-      {categories.map(cat => (
-        <div key={cat._id} className="category-item">
-          <a
-            href={`/products?category=${cat._id}`}
+      {categories.map(category => (
+        <div key={category._id} className="category-item">
+          <button
             className="category-link"
-            onClick={(e) => handleParentClick(e, cat)}
+            onClick={(e) => handleParentClick(e, category)}
           >
-            {cat.name}
-            {cat.children?.length > 0 && <ChevronDown size={16} />}
-          </a>
-
-          {cat.children?.length > 0 &&
-            openCategoryId === cat._id && (
-              <div
-                className="submenu"
-              >
-                {cat.children.map(sub => (
-                  <Link
-                    key={sub._id}
-                    to={`/products?category=${sub._id}`}
-                    onClick={handleSubClick}
-                  >
-                    {sub.name}
-                  </Link>
-                ))}
-              </div>
+            {category.name}
+            {category.children?.length > 0 && (
+              <ChevronDown 
+                size={16} 
+                className={openCategoryId === category._id ? 'rotate' : ''}
+              />
             )}
+          </button>
+
+          {/* Subcategory Dropdown */}
+          {category.children?.length > 0 && openCategoryId === category._id && (
+            <div className="submenu">
+              {category.children.map(subcategory => (
+                <button
+                  key={subcategory._id}
+                  className="submenu-item"
+                  onClick={(e) => handleSubCategoryClick(e, subcategory)}
+                >
+                  {subcategory.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>

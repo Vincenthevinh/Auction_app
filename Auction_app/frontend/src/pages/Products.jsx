@@ -10,7 +10,7 @@ import '../styles/Products.css';
 
 export default function Products() {
   const dispatch = useDispatch();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { items: products, pagination, loading } = useSelector(state => state.products);
 
   const [filters, setFilters] = useState({
@@ -21,6 +21,7 @@ export default function Products() {
     sort: ''
   });
 
+  // Sync URL params with filters
   useEffect(() => {
     const newCategory = searchParams.get('category') || '';
     const newSearch = searchParams.get('search') || '';
@@ -28,32 +29,48 @@ export default function Products() {
     const newPage = parseInt(searchParams.get('page')) || 1;
     
     setFilters(prev => ({
-        ...prev,
-        page: newPage,
-        category: newCategory,
-        search: newSearch,
-        sort: newSort,
+      ...prev,
+      page: newPage,
+      category: newCategory,
+      search: newSearch,
+      sort: newSort,
     }));
   }, [searchParams]);
 
-  
+  // Fetch products when filters change
   useEffect(() => {
+    console.log('Fetching products with filters:', filters);
     dispatch(fetchProducts(filters));
   }, [filters, dispatch]);
 
   const handleFilterChange = (newFilters) => {
-    setFilters(prev => ({
-      ...prev,
+    const updatedFilters = {
+      ...filters,
       ...newFilters,
       page: 1
-    }));
+    };
+    
+    setFilters(updatedFilters);
+    
+    // Update URL params
+    const params = new URLSearchParams();
+    if (updatedFilters.category) params.set('category', updatedFilters.category);
+    if (updatedFilters.search) params.set('search', updatedFilters.search);
+    if (updatedFilters.sort) params.set('sort', updatedFilters.sort);
+    params.set('page', '1');
+    
+    setSearchParams(params);
   };
 
   const handlePageChange = (page) => {
-    setFilters(prev => ({
-      ...prev,
-      page
-    }));
+    const updatedFilters = { ...filters, page };
+    setFilters(updatedFilters);
+    
+    // Update URL
+    const params = new URLSearchParams(searchParams);
+    params.set('page', page.toString());
+    setSearchParams(params);
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -65,12 +82,19 @@ export default function Products() {
             <LayoutGrid size={32} />
             Browse Auctions
           </h1>
-          <p>Found {pagination.total} products</p>
+          <p>
+            {loading ? 'Loading...' : `Found ${pagination.total || 0} products`}
+            {filters.category && ' in this category'}
+            {filters.search && ` matching "${filters.search}"`}
+          </p>
         </div>
 
         <div className="products-content">
           <aside className="products-sidebar">
-            <FilterSidebar onFilterChange={handleFilterChange} />
+            <FilterSidebar 
+              onFilterChange={handleFilterChange}
+              currentFilters={filters}
+            />
           </aside>
 
           <main className="products-main">
@@ -100,7 +124,11 @@ export default function Products() {
               <div className="no-products">
                 <Search size={48} />
                 <h2>No products found</h2>
-                <p>Try adjusting your filters or search criteria</p>
+                <p>
+                  {filters.category || filters.search 
+                    ? 'Try adjusting your filters or search criteria'
+                    : 'No products available at the moment'}
+                </p>
               </div>
             )}
           </main>

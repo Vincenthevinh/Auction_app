@@ -22,6 +22,32 @@ const auctionService = {
       throw new Error(`Bid must be at least ${minBidAmount}`);
     }
     
+    const existingAutoBid = await Bid.findOne({
+      product: productId,
+      status: 'active',
+      isAutoBid: true,
+      maxBidAmount: { $gte: amount }
+    }).sort({ maxBidAmount: -1 });
+
+    let finalAmount = amount;
+    if(existingAutoBid && existingAutoBid.bidder.toString() !== bidderId) {
+      if (existingAutoBid.maxBidAmount >= amount) {
+        finalAmount = Math.min(amount + product.minIncrement, existingAutoBid.maxBidAmount);
+      
+        // Update existing auto-bid to new price
+        await Bid.findByIdAndUpdate(existingAutoBid._id, {amount: finalAmount});
+      
+        product.currentPrice = finalAmount;
+        await product.save();
+        
+        throw new Error(`Outbid by auto-bidder at ${finalAmount}`);
+      }
+    }
+
+    await Bid.updateMany(
+      { product: productId, status: 'active' },
+      { status: 'overbid' }
+    );
     // Check max price nếu buy now có
     if (product.buyNowPrice && amount >= product.buyNowPrice) {
       product.status = 'sold';
@@ -31,6 +57,17 @@ const auctionService = {
       return { message: 'Item sold at buy now price', product };
     }
     
+    // Lưu bid
+    const bid = new Bid({
+      product: productId,
+      bidder: bidderId,
+      amount: finalAmount,
+      isAutoBid,
+      maxBidAmount: isAutoBid ? maxBidAmount : null,
+      status: 'active'
+    });
+    await bid.save();
+    
     // Tự động gia hạn nếu bid gần kết thúc
     if (product.autoExtendEnabled) {
       const timeToEnd = product.endTime - now;
@@ -38,24 +75,29 @@ const auctionService = {
         product.endTime = new Date(now.getTime() + product.autoExtendMinutes * 60 * 1000);
       }
     }
-    
-    // Lưu bid
-    const bid = new Bid({
-      product: productId,
-      bidder: bidderId,
-      amount,
-      isAutoBid
-    });
-    await bid.save();
-    
     // Cập nhật giá hiện tại
     product.currentPrice = amount;
     product.bidCount += 1;
     await product.save();
-    
-    return { message: 'Bid placed successfully', bid };
-  },
   
+    const previousBid = await Bid.findOne({
+      product: productId,
+      status: 'overbid'
+    }).sort({ createdAt: -1 });
+    
+    if (previousBid) {
+      await Notification.create({
+        recipient: previousBid.bidder,
+        type: 'bid_outbid',
+        title: 'You have been outbid',
+        message: `Someone placed a higher bid on ${product.title}`,
+        relatedProduct: productId,
+        relatedBid: bid._id
+      }); 
+    }
+    
+    return { message: 'Bid placed successfully', bid, product };
+  },  
   // Thêm vào watchlist
   async addToWatchlist(userId, productId) {
     const watchlist = new Watchlist({
