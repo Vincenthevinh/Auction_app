@@ -254,15 +254,17 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+      {showAutoBidModal && (
+        <AutoBidModal
+          product={product}
+          onClose={() => setShowAutoBidModal(false)}
+          onSuccess={() => {
+            dispatch(fetchProductDetail(id));
+            dispatch(fetchBidHistory(id));
+          }}
+        />
+      )}
     </div>
-  )}
-{showAutoBidModal && (
-      <AutoBidModal
-        product={product}
-        onClose={() => setShowAutoBidModal(false)}
-        onSuccess={() => {
-          dispatch(fetchProductDetail(id));
-          dispatch(fetchBidHistory(id));
-        }}
-      />
-    )}
+  );
+}
+

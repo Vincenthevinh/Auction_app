@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/slices/authSlice';
 import { Heart, Search, User, LogOut, Home } from 'lucide-react';
-import {CategoryMenu} from '../components/CategoryMenu';
-import {NotificationBell} from '../components/NotificationBell';
+import { CategoryMenu } from '../components/CategoryMenu';
+import NotificationBell from '../components/NotificationBell';
 import '../styles/Header.css';
 
 export default function Header() {

@@ -16,42 +16,59 @@ exports.getProducts = async (req, res, next) => {
 
     let query = { status: 'active' };
 
-    // Filter by category
+    // FIX 3: Enhanced category filtering with error handling
     if (category) {
-      // Check if this is a parent or child category
       const cat = await Category.findById(category);
       
-      if (cat) {
-        if (cat.level === 0) {
-          // Parent category - find all children
-          const childCategories = await Category.find({ parentId: cat._id });
-          const childIds = childCategories.map(c => c._id);
-          
-          // Match products in parent OR any child category
-          query.$or = [
-            { category: cat._id },
-            { subcategory: { $in: childIds } }
-          ];
-        } else {
-          // Child category - match subcategory
-          query.subcategory = category;
-        }
+      // FIX 3a: Handle invalid category ID
+      if (!cat) {
+        return res.status(404).json({
+          message: 'Category not found',
+          items: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            pages: 0
+          }
+        });
+      }
+
+      if (cat.level === 0) {
+        // Parent category - find all children
+        const childCategories = await Category.find({ parentId: cat._id });
+        const childIds = childCategories.map(c => c._id);
+        
+        // Match products in parent OR any child category
+        query.$or = [
+          { category: cat._id },
+          { subcategory: { $in: childIds } }
+        ];
+      } else {
+        // Child category (level 1) - match subcategory field
+        query.subcategory = category;
       }
     }
 
     // Full-text search
     if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
+      const searchQuery = {
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ]
+      };
       
-      // If category filter exists, combine with search
-      if (query.$or && category) {
-        query.$and = [
-          { $or: query.$or },
-          query.$or // category filter
-        ];
+      // If category filter exists, combine with search using $and
+      if (query.$or) {
+        query = {
+          $and: [
+            { $or: query.$or }, // category filter
+            searchQuery         // search filter
+          ]
+        };
+      } else {
+        query = { ...query, ...searchQuery };
       }
     }
 

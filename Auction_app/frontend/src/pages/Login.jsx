@@ -6,6 +6,9 @@ import { showNotification } from '../redux/slices/uiSlice';
 import { validateEmail } from '../utils/helpers';
 import '../styles/Auth.css';
 
+// Lấy SITE_KEY của bạn từ Google Admin Console
+const RECAPTCHA_SITE_KEY = import.meta.env.RECAPTCHA_SITE_KEY; // <<< THAY THẾ BẰNG SITE KEY THỰC TẾ
+
 export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -18,6 +21,10 @@ export default function Login() {
 
   const [errors, setErrors] = useState({});
 
+  // THÊM STATE ĐỂ LƯU TOKEN RECAPTCHA
+  const [recaptchaToken, setRecaptchaToken] = useState(null); 
+  const [recaptchaError, setRecaptchaError] = useState('');
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -29,6 +36,15 @@ export default function Login() {
       newErrors.password = 'Password is required';
     }
 
+    // KIỂM TRA XÁC MINH RECAPTCHA
+    if (!recaptchaToken) {
+        setRecaptchaError('Vui lòng xác minh reCAPTCHA.');
+        // Đặt lỗi nếu thiếu token
+        newErrors.recaptcha = 'Vui lòng xác minh reCAPTCHA.'; 
+    } else {
+        setRecaptchaError('');
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -37,9 +53,16 @@ export default function Login() {
     e.preventDefault();
 
     if (!validateForm()) return;
+    
+    // Tạo object data gửi đi, bao gồm cả token
+    const loginData = {
+        ...formData,
+        reCaptchaToken: recaptchaToken, // <<< THÊM TOKEN VÀO DATA
+    };
 
     try {
-      const result = await dispatch(login(formData));
+      // Gửi loginData bao gồm token
+      const result = await dispatch(login(loginData)); 
       if (result.payload.token) {
         dispatch(showNotification({
           type: 'success',
@@ -50,6 +73,11 @@ export default function Login() {
         navigate(`/verify-otp/${result.payload.userId}`);
       }
     } catch (error) {
+        // Nếu có lỗi từ server (bao gồm cả lỗi reCAPTCHA), chúng ta reset widget
+        if (window.grecaptcha) {
+            window.grecaptcha.reset();
+            setRecaptchaToken(null);
+        }
       dispatch(showNotification({
         type: 'error',
         message: error.message
@@ -71,6 +99,18 @@ export default function Login() {
     }
   };
 
+  // Hàm Callback khi reCAPTCHA thành công
+  const handleRecaptchaChange = (token) => {
+    setRecaptchaToken(token);
+    setRecaptchaError('');
+  };
+
+  // Hàm Callback khi reCAPTCHA hết hạn
+  const handleRecaptchaExpired = () => {
+    setRecaptchaToken(null);
+    setRecaptchaError('Xác minh reCAPTCHA đã hết hạn. Vui lòng xác minh lại.');
+  };
+
   return (
     <div className="auth-container">
       <div className="auth-card">
@@ -80,6 +120,7 @@ export default function Login() {
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
+          {/* ... (Email và Password fields) ... */}
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <input
@@ -107,6 +148,18 @@ export default function Login() {
             />
             {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
+
+          {/* BƯỚC MỚI: WIDGET RECAPTCHA */}
+          <div className="form-group recaptcha-group">
+            <div 
+              className="g-recaptcha" 
+              data-sitekey={RECAPTCHA_SITE_KEY} // THAY THẾ KEY THỰC TẾ
+              data-callback={handleRecaptchaChange}
+              data-expired-callback={handleRecaptchaExpired}
+            ></div>
+            {recaptchaError && <span className="error-text">{recaptchaError}</span>}
+          </div>
+          {/* KẾT THÚC WIDGET RECAPTCHA */}
 
           <button type="submit" disabled={loading} className="btn btn-primary btn-block">
             {loading ? 'Signing In...' : 'Sign In'}

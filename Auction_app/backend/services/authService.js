@@ -1,7 +1,10 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const axios = require('axios');
 
+
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
 // Cấu hình transporter Gmail
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -218,7 +221,7 @@ const authService = {
   },
 
   // Đăng nhập
-  async login(email, password) {
+  async login(email, password, reCaptchaToken) {
     try {
       if (!email || !password) {
         throw new Error('Email and password are required');
@@ -229,6 +232,20 @@ const authService = {
 
       if (!user) {
         throw new Error('Invalid email or password');
+      }
+      // Verify reCAPTCHA
+      if (!reCaptchaToken) {
+        throw new Error('Security verification failed. Please try again.');
+      }
+
+      const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${reCaptchaToken}`;
+
+      const response = await axios.post(verificationUrl);
+      const data = response.data;
+
+      if (!data.success) {
+        console.error('❌ reCAPTCHA failed:', data['error-codes']);
+        throw new Error('Security verification failed. Please try again.');
       }
 
       // Check password
